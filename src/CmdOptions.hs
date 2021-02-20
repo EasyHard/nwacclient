@@ -10,7 +10,7 @@ import Options.Applicative
 import Destination
 import Mics
 
-type DestinationOption = Destination.Destination
+type DestinationOption = Destination.Destination 
 
 data CmdOptions = CmdOptions { 
   destination :: DestinationOption 

@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE MultiWayIf #-}
 
 module Measurement
     ( 
@@ -19,6 +20,8 @@ import Data.List (sortOn)
 import Data.List.NonEmpty (NonEmpty, nonEmpty, map, scanr1, last, zip, head, take, length, sortWith, NonEmpty( (:|) ))
 import Data.Maybe (fromJust)
 
+import Debug.Trace
+
 data Measurement = Measurement {
     datetime :: UTCTime
     , snow_depth :: Maybe Double
@@ -32,7 +35,7 @@ data Measurement = Measurement {
 
 instance FromJSON Measurement
 
-data SortedMeasurementSeq = SMS (NonEmpty Measurement)
+data SortedMeasurementSeq = SMS (NonEmpty Measurement) deriving (Show)
 
 createSortedMeasurementSeq :: NonEmpty Measurement -> SortedMeasurementSeq 
 createSortedMeasurementSeq measurements = SMS $ sortWith datetime measurements
@@ -41,7 +44,7 @@ assume :: (Measurement -> Maybe Double) -> SortedMeasurementSeq -> NonEmpty Doub
 assume f (SMS x) = (fromJust . f) `Data.List.NonEmpty.map` x
 
 sFoldr1 :: (a-> a-> a) -> NonEmpty a -> a
-sFoldr1 f x = Data.List.NonEmpty.last $ Data.List.NonEmpty.scanr1 f x
+sFoldr1 f x = Data.List.NonEmpty.head $ Data.List.NonEmpty.scanr1 f x
 
 sMax :: Ord a => NonEmpty a -> a
 sMax = sFoldr1 max
@@ -51,14 +54,36 @@ sSum = sFoldr1 (+)
 sMin :: Ord a => NonEmpty a -> a
 sMin = sFoldr1 min
 
+filterPrecipitation :: NonEmpty Double -> NonEmpty Double
+filterPrecipitation l = Data.List.NonEmpty.map f l
+    where f = \x -> if
+                | x >= 0.7 -> 0
+                | otherwise -> x 
+
 totalPrecipitation :: SortedMeasurementSeq -> Double
-totalPrecipitation = sSum . assume precipitation
+totalPrecipitation seq = (sSum l) - (Data.List.NonEmpty.head l)
+    where 
+        l = filterPrecipitation $ assume precipitation seq
 
 highestTemperature :: SortedMeasurementSeq -> Double
 highestTemperature = sMax . assume temperature
 
 lowestTemperature :: SortedMeasurementSeq -> Double
 lowestTemperature = sMin .assume temperature
+
+shiftOne :: NonEmpty a -> NonEmpty (a, a)
+shiftOne l = Data.List.NonEmpty.zip prev l
+    where prev = Data.List.NonEmpty.head l :| Data.List.NonEmpty.take ((Data.List.NonEmpty.length l) - 1) l
+    
+resetBump :: (Double, Double) -> (Double, Double)
+resetBump (prev, curr)
+    | curr - prev >= 4 = (prev, prev)
+    | curr - prev <= 0 && curr - prev > -2 = (prev, prev)
+    | otherwise = (prev, curr)
+
+eraseBump :: NonEmpty Double -> NonEmpty Double
+eraseBump l = Data.List.NonEmpty.map snd s
+    where s = Data.List.NonEmpty.map resetBump $ shiftOne l
 
 -- This one is a little tricky for two reasons
 -- 1) accumulation got cleared in different time for
@@ -67,10 +92,14 @@ lowestTemperature = sMin .assume temperature
 -- time to time.
 totalSnowfall :: SortedMeasurementSeq -> Double
 totalSnowfall x = 
-    let snowfall = assume snowfall_24_hour x
-        prevSnowfall = Data.List.NonEmpty.head snowfall :| Data.List.NonEmpty.take ((Data.List.NonEmpty.length snowfall) - 1) snowfall
-        p = Data.List.NonEmpty.zip prevSnowfall snowfall
+    let 
+        rawSnowfall = assume snowfall_24_hour x
+        snowfall = eraseBump . eraseBump . eraseBump $ rawSnowfall
+        p = shiftOne snowfall
     in
+        -- trace (show rawSnowfall)
+        -- trace (show snowfall)
+        -- trace (show p)
         sSum $ Data.List.NonEmpty.map getAccumeratedSnowfall p
 
 getAccumeratedSnowfall :: (Double, Double) -> Double
@@ -78,5 +107,5 @@ getAccumeratedSnowfall (prev, curr)
     | curr - prev >= 4 = 0
     | curr <= 0 = 0
     | curr - prev > 0 = curr - prev
-    | curr < prev && curr < 3.5 = curr
+    | curr < prev && curr - prev < -2 && curr < 3.5 && curr > 0 = curr
     | otherwise = 0

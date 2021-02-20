@@ -14,14 +14,17 @@ import Data.String (fromString)
 import Control.Lens
 import Data.Time
 import Data.Time.Format
+import Data.Time.Format.ISO8601
 import Network.Wreq
 import Data.Aeson
 
 import Measurement (Measurement)
 import Mics
+import Text.Printf
 
+import Debug.Trace
 
-data DataLogger = SnoqualmiePass | SnoqualmiePassDodgeRidge | StevensPass | MtBaker | CrystalBase | CrystalGreenValley
+data DataLogger = SnoqualmiePass | SnoqualmiePassDodgeRidge | StevensPass | MtBaker | CrystalBase | CrystalGreenValley | TimberlineLodge | MissionRidgeMidMountain
 
 data NwacApiResult = NwacApiResult {
     results :: NonEmpty Measurement
@@ -45,11 +48,14 @@ fetchMeasurement dl tr = do
 fetchMeasurementInternal :: DataLogger -> UTCTime -> Int -> Nwac (NonEmpty Measurement)
 fetchMeasurementInternal dl maxDateTime limit = do
     let loggerId = getDataLoggerId dl
-        maxDateTimeStr = formatTime defaultTimeLocale "" maxDateTime 
+        maxDateTimeStr = formatTime defaultTimeLocale "%Y-%m-%dT%H:00:00Z" maxDateTime 
         opts = defaults & param "data_logger" .~ [fromString . show $ loggerId]
                         & param "limit" .~ [fromString . show $ limit]
-                        & param "maxDateTime" .~ [fromString maxDateTimeStr]
+                        & param "max_datetime" .~ [fromString maxDateTimeStr]
+    -- traceM $ show opts
+    -- traceM $ printf "limit = %d, max_datetime = %s" limit maxDateTimeStr
     r <- asJSON =<< getWith opts "https://nwac.us/api/v5/measurement"
+    -- traceM $ show (r ^. responseBody)
     return . results $ r ^. responseBody
 
 getDataLoggerId :: DataLogger -> Int
@@ -61,3 +67,5 @@ getDataLoggerId dataLogger =
         CrystalBase -> 28
         CrystalGreenValley -> 27
         SnoqualmiePassDodgeRidge -> 22
+        TimberlineLodge -> 44
+        MissionRidgeMidMountain -> 26

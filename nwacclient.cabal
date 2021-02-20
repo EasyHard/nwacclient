@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 02ee6f837b203e0d6a53e9759ac3c8f1eb2c1745ce201792aecb8fa8b3964c23
+-- hash: 272b557266d41a72740bf80a359ad9feded4adf18b920e4dcdcfe106a76ec734
 
 name:           nwacclient
 version:        0.1.0.0
@@ -44,6 +44,7 @@ library
     , base >=4.7 && <5
     , bytestring
     , lens
+    , lens-aeson
     , optparse-applicative ==0.15.1.0
     , safe ==0.3.19
     , time ==1.9.3
@@ -56,13 +57,14 @@ executable nwacclient-exe
       Paths_nwacclient
   hs-source-dirs:
       app
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -fwarn-incomplete-patterns
   build-depends:
       aeson ==1.5.5.1
     , aeson-pretty
     , base >=4.7 && <5
     , bytestring
     , lens
+    , lens-aeson
     , nwacclient
     , optparse-applicative ==0.15.1.0
     , safe ==0.3.19
@@ -77,13 +79,14 @@ test-suite nwacclient-test
       Paths_nwacclient
   hs-source-dirs:
       test
-  ghc-options: -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -threaded -rtsopts -with-rtsopts=-N -fwarn-incomplete-patterns
   build-depends:
       aeson ==1.5.5.1
     , aeson-pretty
     , base >=4.7 && <5
     , bytestring
     , lens
+    , lens-aeson
     , nwacclient
     , optparse-applicative ==0.15.1.0
     , safe ==0.3.19

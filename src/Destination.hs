@@ -12,12 +12,13 @@ import Data.Aeson
 import Data.Aeson.Encode.Pretty (encodePretty)
 import GHC.Generics
 import Data.ByteString.Lazy (ByteString)
+import Debug.Trace
 
 import Mics
 import NwacApi
 import Measurement
 
-data Destination = SnoqualmiePass | StevensPass | Crystal | MtBaker deriving (Read, Show, Generic)
+data Destination = SnoqualmiePass | StevensPass | Crystal | MtBaker | Timberline | MissionRidge deriving (Read, Show, Generic)
 
 data SnowInfo = SnowInfo {
     destination :: Destination
@@ -41,6 +42,8 @@ getDataLogger x =
         Destination.StevensPass -> NwacApi.StevensPass
         Destination.Crystal -> NwacApi.CrystalBase
         Destination.MtBaker -> NwacApi.MtBaker
+        Destination.Timberline -> NwacApi.TimberlineLodge
+        Destination.MissionRidge -> NwacApi.MissionRidgeMidMountain
 
 createSnowInfo:: Destination -> TimeRange -> SortedMeasurementSeq -> SnowInfo
 createSnowInfo destination timeRange seq =
