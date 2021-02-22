@@ -10,18 +10,30 @@ import Options.Applicative
 import Destination
 import Mics
 
-type DestinationOption = Destination.Destination 
+data DestinationOption = Dest Destination.Destination | AllDest deriving (Read)
 
 data CmdOptions = CmdOptions { 
   destination :: DestinationOption 
   , timeRange :: TimeRange
 }
 
+isAllDest :: Bool -> DestinationOption
+isAllDest True = AllDest
+isAllDest False = error "not right"
+
 options :: Parser CmdOptions
 options = CmdOptions <$> destination <*> timeRange
   where 
     destination :: Parser DestinationOption
-    destination = option auto (
+    destination = destOpt1 <|> destOpt2
+
+    destOpt2 :: Parser DestinationOption
+    destOpt2 = isAllDest <$> switch
+      ( long "all-dest"
+        <> help "Fetch snow info for all destinations" )
+
+    destOpt1 :: Parser DestinationOption
+    destOpt1 = Dest <$> option auto (
       long "dest"
       <> short 'd'
       <> help "Destination to get snow info." )

@@ -61,7 +61,7 @@ filterPrecipitation l = Data.List.NonEmpty.map f l
                 | otherwise -> x 
 
 totalPrecipitation :: SortedMeasurementSeq -> Double
-totalPrecipitation seq = (sSum l) - (Data.List.NonEmpty.head l)
+totalPrecipitation seq = (sSum l) -- - (Data.List.NonEmpty.head l)
     where 
         l = filterPrecipitation $ assume precipitation seq
 

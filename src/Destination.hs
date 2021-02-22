@@ -32,8 +32,8 @@ data SnowInfo = SnowInfo {
 instance ToJSON Destination
 instance ToJSON SnowInfo 
 
-prettyJsonSnowInfo :: SnowInfo -> ByteString
-prettyJsonSnowInfo snowInfo = encodePretty snowInfo
+prettyJsonSnowInfo :: ToJSON a => a -> ByteString
+prettyJsonSnowInfo = encodePretty
 
 getDataLogger :: Destination -> DataLogger
 getDataLogger x = 
@@ -56,7 +56,7 @@ createSnowInfo destination timeRange seq =
         swe = (totalSnowfall seq) / (totalPrecipitation seq)
     }
 
-fetchSnowInfo :: Destination -> TimeRange -> Nwac SnowInfo
-fetchSnowInfo destination timeRange = do
+fetchSnowInfo :: TimeRange -> Destination -> Nwac SnowInfo
+fetchSnowInfo timeRange destination = do
     seq <- createSortedMeasurementSeq <$> fetchMeasurement (getDataLogger destination) timeRange
     return $ createSnowInfo destination timeRange seq
