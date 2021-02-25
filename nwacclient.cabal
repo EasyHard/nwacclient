@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 272b557266d41a72740bf80a359ad9feded4adf18b920e4dcdcfe106a76ec734
+-- hash: 008ac02e21fd9a0129c2022034b34ff97b340450b8619d0519448768ea61049a
 
 name:           nwacclient
 version:        0.1.0.0
@@ -28,6 +28,7 @@ source-repository head
 library
   exposed-modules:
       CmdOptions
+      DataLogger
       Destination
       Lib
       Measurement

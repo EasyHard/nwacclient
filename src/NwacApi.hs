@@ -23,8 +23,7 @@ import Mics
 import Text.Printf
 
 import Debug.Trace
-
-data DataLogger = SnoqualmiePass | SnoqualmiePassDodgeRidge | StevensPass | MtBaker | CrystalBase | CrystalGreenValley | TimberlineLodge | MissionRidgeMidMountain
+import DataLogger
 
 data NwacApiResult = NwacApiResult {
     results :: NonEmpty Measurement

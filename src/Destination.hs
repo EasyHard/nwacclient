@@ -58,5 +58,6 @@ createSnowInfo destination timeRange seq =
 
 fetchSnowInfo :: TimeRange -> Destination -> Nwac SnowInfo
 fetchSnowInfo timeRange destination = do
-    seq <- createSortedMeasurementSeq <$> fetchMeasurement (getDataLogger destination) timeRange
+    let dl = (getDataLogger destination)
+    seq <- createSortedMeasurementSeq dl <$> fetchMeasurement dl timeRange
     return $ createSnowInfo destination timeRange seq

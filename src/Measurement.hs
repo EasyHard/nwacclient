@@ -22,6 +22,8 @@ import Data.Maybe (fromJust)
 
 import Debug.Trace
 
+import DataLogger
+
 data Measurement = Measurement {
     datetime :: UTCTime
     , snow_depth :: Maybe Double
@@ -35,13 +37,16 @@ data Measurement = Measurement {
 
 instance FromJSON Measurement
 
-data SortedMeasurementSeq = SMS (NonEmpty Measurement) deriving (Show)
+data SortedMeasurementSeq = SMS DataLogger (NonEmpty Measurement) deriving (Show)
 
-createSortedMeasurementSeq :: NonEmpty Measurement -> SortedMeasurementSeq 
-createSortedMeasurementSeq measurements = SMS $ sortWith datetime measurements
+createSortedMeasurementSeq :: DataLogger -> NonEmpty Measurement -> SortedMeasurementSeq 
+createSortedMeasurementSeq dataLogger measurements = SMS dataLogger (sortWith datetime measurements)
+
+dataLogger :: SortedMeasurementSeq -> DataLogger
+dataLogger (SMS dl _) = dl
 
 assume :: (Measurement -> Maybe Double) -> SortedMeasurementSeq -> NonEmpty Double
-assume f (SMS x) = (fromJust . f) `Data.List.NonEmpty.map` x
+assume f (SMS _ x) = (fromJust . f) `Data.List.NonEmpty.map` x
 
 sFoldr1 :: (a-> a-> a) -> NonEmpty a -> a
 sFoldr1 f x = Data.List.NonEmpty.head $ Data.List.NonEmpty.scanr1 f x
@@ -85,6 +90,12 @@ eraseBump :: NonEmpty Double -> NonEmpty Double
 eraseBump l = Data.List.NonEmpty.map snd s
     where s = Data.List.NonEmpty.map resetBump $ shiftOne l
 
+adjust :: DataLogger -> NonEmpty Double -> NonEmpty Double
+adjust dl snowfall =
+    case dl of
+        MissionRidgeMidMountain -> Data.List.NonEmpty.map (1-) snowfall
+        otherwise -> snowfall
+
 -- This one is a little tricky for two reasons
 -- 1) accumulation got cleared in different time for
 -- different data logger and 
@@ -94,7 +105,7 @@ totalSnowfall :: SortedMeasurementSeq -> Double
 totalSnowfall x = 
     let 
         rawSnowfall = assume snowfall_24_hour x
-        snowfall = eraseBump . eraseBump . eraseBump $ rawSnowfall
+        snowfall = eraseBump . eraseBump . eraseBump $ adjust (dataLogger x) rawSnowfall
         p = shiftOne snowfall
     in
         -- trace (show rawSnowfall)
